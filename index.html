@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-accent="blue">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sourav's Blog</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+</head>
+<body>
+  <!-- ===== ANIMATED BACKGROUND ===== -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ===== READING PROGRESS BAR ===== -->
+  <div class="reading-progress" id="reading-progress" style="display:none;">
+    <div class="reading-progress-fill" id="reading-progress-fill"></div>
+  </div>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="nav-brand" id="nav-home">
+      <i class="fa-solid fa-code"></i>
+      <span>TheSkabCode</span>
+    </div>
+    <div class="nav-actions">
+      <div class="search-box" id="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="search-input" placeholder="Search posts…" />
+      </div>
+
+      <!-- Accent Picker -->
+      <div class="accent-picker-wrapper">
+        <button class="btn-icon" id="btn-accent" title="Change accent color">
+          <i class="fa-solid fa-palette"></i>
+        </button>
+        <div class="accent-dropdown" id="accent-dropdown" style="display:none;">
+          <button class="accent-dot accent-blue" data-accent="blue" title="Blue"></button>
+          <button class="accent-dot accent-green" data-accent="green" title="Green"></button>
+          <button class="accent-dot accent-purple" data-accent="purple" title="Purple"></button>
+          <button class="accent-dot accent-orange" data-accent="orange" title="Orange"></button>
+          <button class="accent-dot accent-pink" data-accent="pink" title="Pink"></button>
+          <button class="accent-dot accent-teal" data-accent="teal" title="Teal"></button>
+        </div>
+      </div>
+      <button class="btn-icon" id="btn-theme" title="Toggle theme">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+      <button class="btn-icon admin-only" id="btn-bookmarks" title="Bookmarks" style="display:none;">
+        <i class="fa-solid fa-bookmark"></i>
+      </button>
+      <button class="btn-icon" id="btn-archive" title="Archive view">
+        <i class="fa-solid fa-box-archive"></i>
+      </button>
+      <!-- Auth: shown when NOT logged in -->
+      <button class="btn-github" id="btn-login" title="Login as Admin">
+        <i class="fa-solid fa-lock"></i> Admin
+      </button>
+      <!-- Auth: shown when logged in as admin -->
+      <div class="admin-controls" id="admin-controls" style="display:none;">
+        <button class="btn-primary" id="btn-new-post">
+          <i class="fa-solid fa-plus"></i> New Post
+        </button>
+        <button class="btn-icon btn-logout" id="btn-logout" title="Logout">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HERO / HOME ===== -->
+  <section class="hero" id="hero-section">
+    <h1>Welcome to <span class="gradient-text">TheSkabCode</span></h1>
+    <p class="hero-subtitle" id="hero-subtitle">Blog series by Sourav!</p>
+
+    <div class="hero-stats" id="hero-stats"></div>
+  </section>
+
+  <!-- ===== TAG FILTER BAR ===== -->
+  <div class="controls-bar" id="controls-bar">
+    <div class="tag-filter-bar" id="tag-filter-bar"></div>
+  </div>
+
+  <!-- ===== BLOG LIST ===== -->
+  <main class="blog-list" id="blog-list"></main>
+
+  <!-- ===== ARCHIVE VIEW ===== -->
+  <div class="archive-view" id="archive-view" style="display:none;">
+    <div class="archive-header">
+      <button class="btn-back" id="btn-archive-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2><i class="fa-solid fa-box-archive"></i> Archive</h2>
+    </div>
+    <div class="archive-content" id="archive-content"></div>
+  </div>
+
+  <!-- ===== BOOKMARKS VIEW ===== -->
+  <div class="bookmarks-view" id="bookmarks-view" style="display:none;">
+    <div class="archive-header">
+      <button class="btn-back" id="btn-bookmarks-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2><i class="fa-solid fa-bookmark"></i> Reading List</h2>
+    </div>
+    <div class="bookmarks-content" id="bookmarks-content"></div>
+  </div>
+
+  <!-- ===== EMPTY STATE ===== -->
+  <div class="empty-state" id="empty-state" style="display:none;">
+    <i class="fa-regular fa-newspaper"></i>
+    <h2>No posts yet</h2>
+    <p>Click <strong>"New Post"</strong> to write your first blog entry.</p>
+  </div>
+
+  <!-- ===== SINGLE POST VIEW ===== -->
+  <article class="post-view" id="post-view" style="display:none;">
+    <button class="btn-back" id="btn-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+    <div class="post-layout">
+      <div class="post-main">
+        <div class="post-header">
+          <div class="post-meta" id="post-view-meta"></div>
+          <h1 id="post-view-title"></h1>
+          <div class="post-category-line">
+            <span class="read-time-badge" id="post-view-readbadge"></span>
+          </div>
+          <div class="post-tags" id="post-view-tags"></div>
+          <div class="post-series-nav" id="post-series-nav" style="display:none;"></div>
+        </div>
+        <div class="post-cover" id="post-view-cover"></div>
+        <div class="post-content" id="post-view-content"></div>
+        <div class="post-share" id="post-share">
+          <span>Share:</span>
+          <button class="btn-share" id="btn-copy-link" title="Copy link"><i class="fa-solid fa-link"></i></button>
+          <button class="btn-share" id="btn-share-twitter" title="Share on Twitter/X"><i class="fa-brands fa-x-twitter"></i></button>
+          <button class="btn-share" id="btn-share-linkedin" title="Share on LinkedIn"><i class="fa-brands fa-linkedin-in"></i></button>
+        </div>
+        <div class="post-actions">
+          <button class="btn-secondary admin-only" id="btn-edit" style="display:none;"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn-secondary admin-only" id="btn-pin-post" style="display:none;"><i class="fa-solid fa-thumbtack"></i> Pin</button>
+          <button class="btn-secondary admin-only" id="btn-bookmark-post" style="display:none;"><i class="fa-regular fa-bookmark"></i> Bookmark</button>
+
+          <button class="btn-danger admin-only" id="btn-delete" style="display:none;"><i class="fa-solid fa-trash"></i> Delete</button>
+        </div>
+      </div>
+      <aside class="post-sidebar" id="post-sidebar">
+        <div class="toc-panel" id="toc-panel">
+          <h3><i class="fa-solid fa-list"></i> Table of Contents</h3>
+          <nav id="toc-nav"></nav>
+        </div>
+      </aside>
+    </div>
+  </article>
+
+  <!-- ===== EDITOR MODAL ===== -->
+  <div class="modal-overlay" id="editor-modal" style="display:none;">
+    <div class="editor-container" id="editor-container">
+      <div class="editor-header">
+        <h2 id="editor-title">New Post</h2>
+        <div class="editor-header-actions">
+          <span class="draft-indicator" id="draft-indicator" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Draft saved</span>
+          <button class="btn-icon" id="btn-import-url" title="Import from URL"><i class="fa-solid fa-globe"></i></button>
+          <button class="btn-icon" id="btn-fullscreen" title="Toggle fullscreen"><i class="fa-solid fa-expand"></i></button>
+          <button class="btn-icon" id="btn-cheatsheet" title="Markdown cheat sheet"><i class="fa-solid fa-circle-question"></i></button>
+          <button class="btn-icon" id="btn-close-editor"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="editor-body">
+        <input type="text" id="input-title" class="input-title" placeholder="Post title…" />
+        <div class="editor-meta-row">
+          <input type="text" id="input-tags" class="input-tags" placeholder="Tags (comma separated)…" />
+          <input type="text" id="input-series" class="input-tags" placeholder="Series name (optional)…" />
+        </div>
+
+        <!-- Cover Image -->
+        <div class="cover-upload">
+          <label class="btn-secondary" for="input-cover">
+            <i class="fa-solid fa-image"></i> Cover Image
+          </label>
+          <input type="file" id="input-cover" accept="image/*" hidden />
+          <span class="cover-name" id="cover-name">No image selected</span>
+          <button class="btn-icon btn-remove-cover" id="btn-remove-cover" style="display:none;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="cover-preview" id="cover-preview"></div>
+
+        <!-- Toolbar -->
+        <div class="editor-toolbar">
+          <button data-action="bold" title="Bold (Ctrl+B)"><i class="fa-solid fa-bold"></i></button>
+          <button data-action="italic" title="Italic (Ctrl+I)"><i class="fa-solid fa-italic"></i></button>
+          <button data-action="strikethrough" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
+          <button data-action="underline" title="Underline"><i class="fa-solid fa-underline"></i></button>
+          <span class="toolbar-divider"></span>
+          <button data-action="h1" title="Heading 1">H1</button>
+          <button data-action="h2" title="Heading 2">H2</button>
+          <button data-action="h3" title="Heading 3">H3</button>
+          <span class="toolbar-divider"></span>
+          <button data-action="ul" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
+          <button data-action="ol" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+          <button data-action="checklist" title="Checklist"><i class="fa-solid fa-list-check"></i></button>
+          <span class="toolbar-divider"></span>
+          <button data-action="link" title="Link (Ctrl+K)"><i class="fa-solid fa-link"></i></button>
+          <button data-action="image" title="Image from URL"><i class="fa-solid fa-image"></i></button>
+          <button data-action="inline-image" title="Upload Image from Device" class="btn-upload-img"><i class="fa-solid fa-upload"></i> Image</button>
+          <input type="file" id="input-inline-image" accept="image/*" hidden />
+          <span class="toolbar-divider"></span>
+          <button data-action="code" title="Inline Code"><i class="fa-solid fa-code"></i></button>
+          <button data-action="codeblock" title="Code Block"><i class="fa-solid fa-terminal"></i></button>
+          <button data-action="blockquote" title="Blockquote"><i class="fa-solid fa-quote-left"></i></button>
+          <button data-action="hr" title="Horizontal Rule"><i class="fa-solid fa-minus"></i></button>
+          <button data-action="table" title="Table"><i class="fa-solid fa-table"></i></button>
+          <span class="toolbar-divider"></span>
+          <button data-action="highlight" title="Highlight Text"><i class="fa-solid fa-highlighter"></i></button>
+          <button data-action="superscript" title="Superscript"><i class="fa-solid fa-superscript"></i></button>
+          <button data-action="subscript" title="Subscript"><i class="fa-solid fa-subscript"></i></button>
+          <span class="toolbar-divider"></span>
+          <button data-action="emoji" title="Emoji Picker"><i class="fa-regular fa-face-smile"></i></button>
+        </div>
+
+        <!-- Emoji Picker -->
+        <div class="emoji-picker" id="emoji-picker" style="display:none;"></div>
+
+        <!-- Cheat Sheet -->
+        <div class="cheatsheet-panel" id="cheatsheet-panel" style="display:none;">
+          <h4>Markdown Cheat Sheet</h4>
+          <div class="cheatsheet-grid">
+            <div><code># Heading 1</code></div>
+            <div><code>## Heading 2</code></div>
+            <div><code>**bold**</code> → <strong>bold</strong></div>
+            <div><code>*italic*</code> → <em>italic</em></div>
+            <div><code>~~strike~~</code> → <s>strike</s></div>
+            <div><code>`code`</code> → <code>code</code></div>
+            <div><code>```lang ... ```</code> → code block</div>
+            <div><code>[text](url)</code> → link</div>
+            <div><code>![alt](url)</code> → image</div>
+            <div><code>> quote</code> → blockquote</div>
+            <div><code>- item</code> → bullet list</div>
+            <div><code>1. item</code> → numbered list</div>
+            <div><code>- [ ] task</code> → checklist</div>
+            <div><code>---</code> → horizontal rule</div>
+            <div><code>| H | H |</code> → table</div>
+          </div>
+        </div>
+
+        <!-- Editor + Preview Panes -->
+        <div class="editor-panes" id="editor-panes">
+          <div class="pane pane-editor" id="pane-editor">
+            <div class="pane-label">
+              <i class="fa-solid fa-pencil"></i> Markdown
+              <button class="btn-pane-toggle" id="btn-expand-editor" title="Expand editor"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+            </div>
+            <textarea id="editor-textarea" placeholder="Write your post in Markdown…"></textarea>
+          </div>
+          <div class="pane pane-preview" id="pane-preview">
+            <div class="pane-label">
+              <i class="fa-solid fa-eye"></i> Preview
+              <button class="btn-pane-toggle" id="btn-expand-preview" title="Expand preview"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+            </div>
+            <div class="preview-content" id="preview-content"></div>
+          </div>
+        </div>
+      </div>
+      <div class="editor-footer">
+        <div class="editor-footer-info">
+          <span id="word-count">0 words</span>
+          <span id="read-time">0 min read</span>
+        </div>
+        <div class="editor-footer-actions">
+          <button class="btn-secondary" id="btn-cancel">Cancel</button>
+          <button class="btn-primary" id="btn-publish"><i class="fa-solid fa-paper-plane"></i> Publish</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ===== CONFIRM DIALOG ===== -->
+  <div class="modal-overlay confirm-overlay" id="confirm-dialog" style="display:none;">
+    <div class="confirm-box">
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p id="confirm-message">This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" id="confirm-cancel">Cancel</button>
+        <button class="btn-danger" id="confirm-ok">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <p>Built with <i class="fa-solid fa-heart"></i> by <strong>Sourav Karmakar</strong> · <a href="https://github.com/iamskab" target="_blank" title="GitHub"><i class="fa-brands fa-github"></i> iamskab</a> <span class="admin-only" style="display:none;">· <a href="#" id="btn-export">Export Data</a> · <label for="input-import" class="footer-link">Import Data</label></span></p>
+    <input type="file" id="input-import" accept=".json" hidden />
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
